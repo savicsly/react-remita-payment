@@ -60,7 +60,7 @@ export interface RemitaPaymentProps {
   children?: React.ReactNode;
 }
 export interface UseRemitaPaymentReturn {
-  initiatePayment: () => Promise<void>;
+  initiatePayment: (paymentData: PaymentRequest) => Promise<void>;
   isLoading: boolean;
   error: string | null;
   isScriptLoaded: boolean;
