@@ -1,15 +1,9 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import * as useRemitaPaymentModule from "../../hooks/useRemitaPayment";
 import { PaymentRequest, RemitaConfig } from "../../types";
 import RemitaPayment from "../RemitaPayment";
 
-jest.mock("../../hooks/useRemitaPayment", () => ({
-  useRemitaPayment: jest.fn(() => ({
-    initiatePayment: jest.fn(),
-    isLoading: false,
-    error: null,
-    isScriptLoaded: true,
-  })),
-}));
+jest.mock("../../hooks/useRemitaPayment");
 
 const mockConfig: RemitaConfig = {
   publicKey: "pk_test_1234567890",
@@ -37,6 +31,12 @@ describe("RemitaPayment Component", () => {
   });
 
   it("renders payment button with default text", () => {
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
+      initiatePayment: jest.fn(),
+      isLoading: false,
+      error: null,
+      isScriptLoaded: true,
+    });
     render(
       <RemitaPayment
         config={mockConfig}
@@ -44,7 +44,6 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     expect(
       screen.getByRole("button", { name: /initiate remita payment/i })
     ).toBeInTheDocument();
@@ -52,6 +51,12 @@ describe("RemitaPayment Component", () => {
   });
 
   it("renders custom children when provided", () => {
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
+      initiatePayment: jest.fn(),
+      isLoading: false,
+      error: null,
+      isScriptLoaded: true,
+    });
     render(
       <RemitaPayment
         config={mockConfig}
@@ -61,19 +66,16 @@ describe("RemitaPayment Component", () => {
         Custom Payment Text
       </RemitaPayment>
     );
-
     expect(screen.getByText("Custom Payment Text")).toBeInTheDocument();
   });
 
   it("shows loading state when isLoading is true", () => {
-    const { useRemitaPayment } = require("../../hooks/useRemitaPayment");
-    useRemitaPayment.mockReturnValue({
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
       initiatePayment: jest.fn(),
       isLoading: true,
       error: null,
       isScriptLoaded: true,
     });
-
     render(
       <RemitaPayment
         config={mockConfig}
@@ -81,20 +83,17 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     expect(screen.getByText("Processing...")).toBeInTheDocument();
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
   it("shows loading script state when script is not loaded", () => {
-    const { useRemitaPayment } = require("../../hooks/useRemitaPayment");
-    useRemitaPayment.mockReturnValue({
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
       initiatePayment: jest.fn(),
       isLoading: false,
       error: null,
       isScriptLoaded: false,
     });
-
     render(
       <RemitaPayment
         config={mockConfig}
@@ -102,20 +101,17 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     expect(screen.getByText("Loading...")).toBeInTheDocument();
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
   it("displays error message when error exists", () => {
-    const { useRemitaPayment } = require("../../hooks/useRemitaPayment");
-    useRemitaPayment.mockReturnValue({
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
       initiatePayment: jest.fn(),
       isLoading: false,
       error: "Configuration error",
       isScriptLoaded: true,
     });
-
     render(
       <RemitaPayment
         config={mockConfig}
@@ -123,7 +119,6 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     expect(
       screen.getByText("Payment Error: Configuration error")
     ).toBeInTheDocument();
@@ -132,14 +127,12 @@ describe("RemitaPayment Component", () => {
 
   it("calls initiatePayment when button is clicked", async () => {
     const mockInitiatePayment = jest.fn();
-    const { useRemitaPayment } = require("../../hooks/useRemitaPayment");
-    useRemitaPayment.mockReturnValue({
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
       initiatePayment: mockInitiatePayment,
       isLoading: false,
       error: null,
       isScriptLoaded: true,
     });
-
     render(
       <RemitaPayment
         config={mockConfig}
@@ -147,10 +140,8 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     const button = screen.getByRole("button");
     fireEvent.click(button);
-
     await waitFor(() => {
       expect(mockInitiatePayment).toHaveBeenCalledTimes(1);
       expect(mockInitiatePayment).toHaveBeenCalledWith(mockPaymentData);
@@ -159,17 +150,14 @@ describe("RemitaPayment Component", () => {
 
   it("generates transaction ID if not provided", async () => {
     const mockInitiatePayment = jest.fn();
-    const { useRemitaPayment } = require("../../hooks/useRemitaPayment");
-    useRemitaPayment.mockReturnValue({
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
       initiatePayment: mockInitiatePayment,
       isLoading: false,
       error: null,
       isScriptLoaded: true,
     });
-
     const paymentDataWithoutId = { ...mockPaymentData };
     delete paymentDataWithoutId.transactionId;
-
     render(
       <RemitaPayment
         config={mockConfig}
@@ -177,10 +165,8 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     const button = screen.getByRole("button");
     fireEvent.click(button);
-
     await waitFor(() => {
       expect(mockInitiatePayment).toHaveBeenCalledTimes(1);
       const calledWith = mockInitiatePayment.mock.calls[0][0];
@@ -190,6 +176,12 @@ describe("RemitaPayment Component", () => {
   });
 
   it("respects disabled prop", () => {
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
+      initiatePayment: jest.fn(),
+      isLoading: false,
+      error: null,
+      isScriptLoaded: true,
+    });
     render(
       <RemitaPayment
         config={mockConfig}
@@ -198,11 +190,16 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
   it("applies custom className", () => {
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
+      initiatePayment: jest.fn(),
+      isLoading: false,
+      error: null,
+      isScriptLoaded: true,
+    });
     render(
       <RemitaPayment
         config={mockConfig}
@@ -211,7 +208,6 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     expect(screen.getByRole("button").closest("div")).toHaveClass(
       "remita-payment-container",
       "custom-class"
@@ -220,14 +216,12 @@ describe("RemitaPayment Component", () => {
 
   it("does not call initiatePayment when disabled", async () => {
     const mockInitiatePayment = jest.fn();
-    const { useRemitaPayment } = require("../../hooks/useRemitaPayment");
-    useRemitaPayment.mockReturnValue({
+    (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
       initiatePayment: mockInitiatePayment,
       isLoading: false,
       error: null,
       isScriptLoaded: true,
     });
-
     render(
       <RemitaPayment
         config={mockConfig}
@@ -236,10 +230,8 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-
     const button = screen.getByRole("button");
     fireEvent.click(button);
-
     expect(mockInitiatePayment).not.toHaveBeenCalled();
   });
 });

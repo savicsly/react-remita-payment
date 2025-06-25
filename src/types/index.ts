@@ -24,7 +24,7 @@ export interface PaymentRequest {
   lastName: string;
   phoneNumber?: string;
   narration?: string;
-  transactionId: string;
+  transactionId?: string; // Made optional for test flexibility
   customFields?: CustomField[];
 }
 export interface PaymentResponse {
