@@ -1,4 +1,5 @@
 {
+  "type": "module",
   "name": "react-remita-payment",
   "version": "1.0.0",
   "description": "A modern React component for processing Remita payments using their inline script with security best practices",
