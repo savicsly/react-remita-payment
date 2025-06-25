@@ -136,23 +136,24 @@ export const useRemitaPayment = ({
         const paymentOptions = {
           key: config.publicKey,
           processRrr: true,
-          transactionId: paymentData.transactionId,
+          transactionId: paymentData.transactionId ?? "",
           amount: paymentData.amount,
           currency: config.currency || "NGN",
           customerId: paymentData.email,
           firstName: paymentData.firstName,
           lastName: paymentData.lastName,
           email: paymentData.email,
-          phoneNumber: paymentData.phoneNumber,
+          phoneNumber: paymentData.phoneNumber ?? "",
           narration:
-            paymentData.narration || `Payment for ${paymentData.transactionId}`,
+            paymentData.narration ||
+            `Payment for ${paymentData.transactionId ?? ""}`,
           onSuccess: (response: any) => {
             // Handle successful payment
             console.log("Payment successful:", maskSensitiveData(response));
             setIsLoading(false);
             const successResponse: PaymentResponse = {
               status: "success",
-              transactionId: paymentData.transactionId,
+              transactionId: paymentData.transactionId ?? "",
               paymentReference:
                 response.paymentReference || response.transactionId,
               message: response.message || "Payment successful",

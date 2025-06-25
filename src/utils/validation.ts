@@ -98,10 +98,9 @@ export const validateEnvironment = (): boolean => {
   return true;
 };
 // Masks sensitive data for logging
-export const maskSensitiveData = (
-  data: Record<string, unknown>
-): Record<string, unknown> => {
-  const masked = { ...data };
+export const maskSensitiveData = (data: unknown): Record<string, unknown> => {
+  if (!data || typeof data !== "object") return {};
+  const masked = { ...(data as Record<string, unknown>) };
   if (typeof masked.email === "string") {
     const [localPart, domain] = masked.email.split("@");
     masked.email = `${localPart.charAt(0)}***@${domain}`;
