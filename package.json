@@ -10,7 +10,9 @@
     "dist"
   ],
   "scripts": {
-    "build": "rollup -c",
+    "build:js": "rollup -c",
+    "build:types": "npx tsc && ROLLUP_BUILD_TYPE=types rollup -c",
+    "build": "npm run build:js && npm run build:types",
     "dev": "rollup -c -w",
     "test": "jest",
     "test:watch": "jest --watch",

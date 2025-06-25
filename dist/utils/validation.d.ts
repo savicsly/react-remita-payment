@@ -1,0 +1,11 @@
+import { PaymentRequest, RemitaConfig } from "../types";
+export declare const validateEmail: (email: string) => boolean;
+export declare const validatePhoneNumber: (phoneNumber: string) => boolean;
+export declare const validateAmount: (amount: number) => boolean;
+export declare const validateTransactionId: (transactionId: string) => boolean;
+export declare const sanitizeString: (input: string) => string;
+export declare const validatePaymentRequest: (paymentData: PaymentRequest) => string[];
+export declare const validateRemitaConfig: (config: RemitaConfig) => string[];
+export declare const generateTransactionRef: (prefix?: string) => string;
+export declare const validateEnvironment: (win?: typeof window) => boolean;
+export declare const maskSensitiveData: (data: unknown) => Record<string, unknown>;
