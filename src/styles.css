@@ -1,0 +1,118 @@
+/* Default styles for React Remita Payment */
+
+.remita-payment-container {
+  display: inline-block;
+  position: relative;
+}
+
+.remita-payment-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+  outline: none;
+  min-width: 120px;
+}
+
+.remita-payment-button:hover:not(:disabled) {
+  background-color: #0056b3;
+  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+.remita-payment-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.remita-payment-button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
+.remita-payment-button:focus {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.remita-payment-error {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.remita-payment-error span {
+  display: block;
+}
+
+/* Loading states */
+.remita-payment-button[data-loading="true"] {
+  position: relative;
+  color: transparent;
+}
+
+.remita-payment-button[data-loading="true"]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .remita-payment-button {
+    width: 100%;
+    padding: 14px 24px;
+    font-size: 16px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .remita-payment-button {
+    border: 2px solid currentColor;
+  }
+  
+  .remita-payment-error {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .remita-payment-button {
+    transition: none;
+  }
+  
+  .remita-payment-button:hover:not(:disabled) {
+    transform: none;
+  }
+  
+  .remita-payment-button[data-loading="true"]::after {
+    animation: none;
+  }
+}
