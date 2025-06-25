@@ -4,7 +4,7 @@ A modern, secure React component library for processing payments using Remita's 
 
 [![npm version](https://badge.fury.io/js/react-remita-payment.svg)](https://badge.fury.io/js/react-remita-payment)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://github.com/yourusername/react-remita-payment/workflows/CI/badge.svg)](https://github.com/yourusername/react-remita-payment/actions)
+[![Build Status](https://github.com/savicsly/react-remita-payment/workflows/CI/badge.svg)](https://github.com/yourusername/react-remita-payment/actions)
 
 ## Features
 
@@ -31,38 +31,42 @@ yarn add react-remita-payment
 ## Quick Start
 
 ```tsx
-import React from 'react';
-import { RemitaPayment, RemitaConfig, PaymentRequest } from 'react-remita-payment';
+import React from "react";
+import {
+  RemitaPayment,
+  RemitaConfig,
+  PaymentRequest,
+} from "react-remita-payment";
 
 const App: React.FC = () => {
   const config: RemitaConfig = {
-    publicKey: 'your-remita-public-key',
-    serviceTypeId: 'your-service-type-id',
-    currency: 'NGN', // Optional, defaults to NGN
+    publicKey: "your-remita-public-key",
+    serviceTypeId: "your-service-type-id",
+    currency: "NGN", // Optional, defaults to NGN
   };
 
   const paymentData: PaymentRequest = {
     amount: 10000, // Amount in kobo (100 kobo = 1 Naira)
-    email: 'customer@example.com',
-    firstName: 'John',
-    lastName: 'Doe',
-    transactionId: 'TXN123456789', // Optional, will be auto-generated if not provided
-    phoneNumber: '+2348012345678', // Optional
-    narration: 'Payment for services', // Optional
+    email: "customer@example.com",
+    firstName: "John",
+    lastName: "Doe",
+    transactionId: "TXN123456789", // Optional, will be auto-generated if not provided
+    phoneNumber: "+2348012345678", // Optional
+    narration: "Payment for services", // Optional
   };
 
   const handleSuccess = (response) => {
-    console.log('Payment successful:', response);
+    console.log("Payment successful:", response);
     // Handle successful payment
   };
 
   const handleError = (error) => {
-    console.error('Payment failed:', error);
+    console.error("Payment failed:", error);
     // Handle payment error
   };
 
   const handleClose = () => {
-    console.log('Payment dialog closed');
+    console.log("Payment dialog closed");
     // Handle dialog close
   };
 
@@ -93,38 +97,36 @@ export default App;
 For more control over the payment flow, you can use the `useRemitaPayment` hook directly:
 
 ```tsx
-import React from 'react';
-import { useRemitaPayment, generateTransactionRef } from 'react-remita-payment';
+import React from "react";
+import { useRemitaPayment, generateTransactionRef } from "react-remita-payment";
 
 const CustomPaymentComponent: React.FC = () => {
-  const { initiatePayment, isLoading, error, isScriptLoaded } = useRemitaPayment({
-    config: {
-      publicKey: 'your-public-key',
-      serviceTypeId: 'your-service-type-id',
-    },
-    environment: 'demo',
-    onSuccess: (response) => console.log('Success:', response),
-    onError: (error) => console.error('Error:', error),
-    onClose: () => console.log('Closed'),
-  });
+  const { initiatePayment, isLoading, error, isScriptLoaded } =
+    useRemitaPayment({
+      config: {
+        publicKey: "your-public-key",
+        serviceTypeId: "your-service-type-id",
+      },
+      environment: "demo",
+      onSuccess: (response) => console.log("Success:", response),
+      onError: (error) => console.error("Error:", error),
+      onClose: () => console.log("Closed"),
+    });
 
   const handlePay = async () => {
     await initiatePayment({
       amount: 5000,
-      email: 'user@example.com',
-      firstName: 'Jane',
-      lastName: 'Smith',
-      transactionId: generateTransactionRef('CUSTOM'),
+      email: "user@example.com",
+      firstName: "Jane",
+      lastName: "Smith",
+      transactionId: generateTransactionRef("CUSTOM"),
     });
   };
 
   return (
     <div>
-      <button 
-        onClick={handlePay} 
-        disabled={!isScriptLoaded || isLoading}
-      >
-        {isLoading ? 'Processing...' : 'Pay Now'}
+      <button onClick={handlePay} disabled={!isScriptLoaded || isLoading}>
+        {isLoading ? "Processing..." : "Pay Now"}
       </button>
       {error && <div className="error">{error}</div>}
     </div>
@@ -135,26 +137,29 @@ const CustomPaymentComponent: React.FC = () => {
 ### Custom Validation
 
 ```tsx
-import { validatePaymentRequest, validateRemitaConfig } from 'react-remita-payment';
+import {
+  validatePaymentRequest,
+  validateRemitaConfig,
+} from "react-remita-payment";
 
 const paymentData = {
   amount: 1000,
-  email: 'test@example.com',
-  firstName: 'John',
-  lastName: 'Doe',
-  transactionId: 'TXN123',
+  email: "test@example.com",
+  firstName: "John",
+  lastName: "Doe",
+  transactionId: "TXN123",
 };
 
 // Validate payment data
 const errors = validatePaymentRequest(paymentData);
 if (errors.length > 0) {
-  console.error('Validation errors:', errors);
+  console.error("Validation errors:", errors);
 }
 
 // Validate configuration
 const configErrors = validateRemitaConfig(config);
 if (configErrors.length > 0) {
-  console.error('Config errors:', configErrors);
+  console.error("Config errors:", configErrors);
 }
 ```
 
@@ -162,27 +167,27 @@ if (configErrors.length > 0) {
 
 ### RemitaPayment Component Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `config` | `RemitaConfig` | Yes | Remita configuration object |
-| `paymentData` | `PaymentRequest` | Yes | Payment information |
-| `environment` | `'demo' \| 'live'` | No | Environment (default: 'demo') |
-| `onSuccess` | `PaymentSuccessCallback` | Yes | Success callback function |
-| `onError` | `PaymentErrorCallback` | Yes | Error callback function |
-| `onClose` | `PaymentCloseCallback` | Yes | Close callback function |
-| `disabled` | `boolean` | No | Disable the payment button |
-| `className` | `string` | No | Additional CSS classes |
-| `children` | `React.ReactNode` | No | Custom button content |
+| Prop          | Type                     | Required | Description                   |
+| ------------- | ------------------------ | -------- | ----------------------------- |
+| `config`      | `RemitaConfig`           | Yes      | Remita configuration object   |
+| `paymentData` | `PaymentRequest`         | Yes      | Payment information           |
+| `environment` | `'demo' \| 'live'`       | No       | Environment (default: 'demo') |
+| `onSuccess`   | `PaymentSuccessCallback` | Yes      | Success callback function     |
+| `onError`     | `PaymentErrorCallback`   | Yes      | Error callback function       |
+| `onClose`     | `PaymentCloseCallback`   | Yes      | Close callback function       |
+| `disabled`    | `boolean`                | No       | Disable the payment button    |
+| `className`   | `string`                 | No       | Additional CSS classes        |
+| `children`    | `React.ReactNode`        | No       | Custom button content         |
 
 ### RemitaConfig
 
 ```tsx
 interface RemitaConfig {
-  publicKey: string;          // Your Remita public key
-  serviceTypeId: string;      // Your service type ID
-  currency?: string;          // Currency code (NGN, USD, GBP, EUR)
+  publicKey: string; // Your Remita public key
+  serviceTypeId: string; // Your service type ID
+  currency?: string; // Currency code (NGN, USD, GBP, EUR)
   customFields?: CustomField[]; // Additional custom fields
-  split?: SplitPayment[];     // Split payment configuration
+  split?: SplitPayment[]; // Split payment configuration
 }
 ```
 
@@ -190,13 +195,13 @@ interface RemitaConfig {
 
 ```tsx
 interface PaymentRequest {
-  amount: number;           // Amount in smallest currency unit (kobo for NGN)
-  email: string;           // Customer email
-  firstName: string;       // Customer first name
-  lastName: string;        // Customer last name
-  transactionId: string;   // Unique transaction identifier
-  phoneNumber?: string;    // Customer phone number (optional)
-  narration?: string;      // Payment description (optional)
+  amount: number; // Amount in smallest currency unit (kobo for NGN)
+  email: string; // Customer email
+  firstName: string; // Customer first name
+  lastName: string; // Customer last name
+  transactionId: string; // Unique transaction identifier
+  phoneNumber?: string; // Customer phone number (optional)
+  narration?: string; // Payment description (optional)
   customFields?: CustomField[]; // Additional fields (optional)
 }
 ```
@@ -205,7 +210,7 @@ interface PaymentRequest {
 
 ```tsx
 interface PaymentResponse {
-  status: 'success' | 'failed' | 'pending';
+  status: "success" | "failed" | "pending";
   transactionId: string;
   paymentReference?: string;
   message: string;
@@ -217,7 +222,7 @@ interface PaymentResponse {
 }
 
 interface ErrorResponse {
-  status: 'error';
+  status: "error";
   message: string;
   code?: string;
   details?: Record<string, any>;
@@ -229,6 +234,7 @@ interface ErrorResponse {
 This library implements several security best practices:
 
 ### 1. Input Validation
+
 - All user inputs are validated before processing
 - Email format validation using comprehensive regex
 - Phone number validation for Nigerian formats
@@ -236,21 +242,25 @@ This library implements several security best practices:
 - Transaction ID format validation
 
 ### 2. Data Sanitization
+
 - String inputs are sanitized to prevent XSS attacks
 - Special characters are escaped or removed
 - Sensitive data is masked in logs
 
 ### 3. Script Loading Security
+
 - Remita scripts are loaded with security attributes
 - Cross-origin and referrer policies are enforced
 - Script integrity checks are performed
 
 ### 4. Environment Validation
+
 - HTTPS enforcement in production
 - Environment-specific script URLs
 - Proper error handling and logging
 
 ### 5. Secure Data Handling
+
 - Sensitive information is never logged in plain text
 - Payment data is validated before transmission
 - No sensitive data is stored in component state
@@ -297,6 +307,7 @@ See [CHANGELOG.md](CHANGELOG.md) for details about changes in each version.
 ## Remita Documentation
 
 For more information about Remita's payment API, visit:
+
 - [Remita Developer Center](https://www.remita.net/developers/)
 - [Inline Payment Documentation](https://www.remita.net/developers/#/payment/inline)
 
