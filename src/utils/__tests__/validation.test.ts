@@ -5,6 +5,7 @@ import {
   sanitizeString,
   validateAmount,
   validateEmail,
+  validateEnvironment,
   validatePaymentRequest,
   validatePhoneNumber,
   validateRemitaConfig,
@@ -148,6 +149,34 @@ describe("Validation Utils", () => {
       const ref = generateTransactionRef("CUSTOM");
       expect(ref).toMatch(/^CUSTOM_/);
     });
+    it("should generate a unique reference with the given prefix", () => {
+      const ref1 = generateTransactionRef("TEST");
+      const ref2 = generateTransactionRef("TEST");
+      expect(ref1).toMatch(/^TEST_/);
+      expect(ref2).toMatch(/^TEST_/);
+      expect(ref1).not.toBe(ref2);
+    });
+  });
+  describe("validateEnvironment", () => {
+    it("should return false if window is undefined", () => {
+      expect(validateEnvironment(undefined)).toBe(false);
+    });
+    it("should warn if not using HTTPS in production", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fakeWindow = { location: { protocol: "http:" } } as any;
+      process.env.NODE_ENV = "production";
+      const warnSpy = jest.spyOn(console, "warn").mockImplementation();
+      expect(validateEnvironment(fakeWindow)).toBe(true);
+      expect(warnSpy).toHaveBeenCalledWith(
+        "HTTPS is recommended for production payment processing"
+      );
+      warnSpy.mockRestore();
+    });
+    it("should return true if window is defined", () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fakeWindow = { location: { protocol: "https:" } } as any;
+      expect(validateEnvironment(fakeWindow)).toBe(true);
+    });
   });
   describe("maskSensitiveData", () => {
     it("should mask email addresses", () => {
@@ -169,6 +198,26 @@ describe("Validation Utils", () => {
       const data = { amount: 1000, currency: "NGN" };
       const masked = maskSensitiveData(data);
       expect(masked).toEqual(data);
+    });
+    it("should mask email, phone number, and public key", () => {
+      const masked = maskSensitiveData({
+        email: "user@example.com",
+        phoneNumber: "+2348012345678",
+        publicKey: "pk_test_1234567890",
+      });
+      expect(masked.email).toBe("u***@example.com");
+      expect(masked.phoneNumber).toBe("***5678");
+      expect(masked.publicKey).toBe("pk_t***7890");
+    });
+    it("should handle missing fields gracefully", () => {
+      const masked = maskSensitiveData({});
+      expect(masked).toEqual({});
+    });
+    it("should return empty object for non-object input", () => {
+      expect(maskSensitiveData(null)).toEqual({});
+      expect(maskSensitiveData(undefined)).toEqual({});
+      expect(maskSensitiveData(123)).toEqual({});
+      expect(maskSensitiveData("string")).toEqual({});
     });
   });
 });

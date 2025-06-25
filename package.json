@@ -34,6 +34,20 @@
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
+  "jest": {
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}",
+      "!src/**/*.d.ts"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "branches": 60,
+        "functions": 78,
+        "lines": 78,
+        "statements": 78
+      }
+    }
+  },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.1.4",
     "@testing-library/react": "^13.4.0",

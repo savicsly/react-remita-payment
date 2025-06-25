@@ -84,14 +84,14 @@ export const generateTransactionRef = (prefix: string = "RMT"): string => {
   return `${prefix}_${timestamp}_${randomStr}`.toUpperCase();
 };
 // Validates that required environment variables are set
-export const validateEnvironment = (): boolean => {
-  if (typeof window === "undefined") {
+export const validateEnvironment = (win?: typeof window): boolean => {
+  if (typeof win === "undefined") {
     return false;
   }
   // Warn if not using HTTPS in production
   if (
     process.env.NODE_ENV === "production" &&
-    window.location.protocol !== "https:"
+    win.location.protocol !== "https:"
   ) {
     console.warn("HTTPS is recommended for production payment processing");
   }
