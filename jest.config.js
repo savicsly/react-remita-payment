@@ -1,16 +1,16 @@
 export default {
-  preset: 'ts-jest',
-  testEnvironment: 'jsdom',
-  setupFilesAfterEnv: ['<rootDir>/src/setupTests.ts'],
+  preset: "ts-jest",
+  testEnvironment: "jsdom",
+  setupFilesAfterEnv: ["<rootDir>/src/setupTests.ts"],
   testMatch: [
-    '<rootDir>/src/**/__tests__/**/*.(ts|tsx)',
-    '<rootDir>/src/**/?(*.)(spec|test).(ts|tsx)'
+    "<rootDir>/src/**/__tests__/**/*.(ts|tsx)",
+    "<rootDir>/src/**/?(*.)(spec|test).(ts|tsx)",
   ],
   collectCoverageFrom: [
-    'src/**/*.(ts|tsx)',
-    '!src/**/*.d.ts',
-    '!src/index.ts',
-    '!src/setupTests.ts',
+    "src/**/*.(ts|tsx)",
+    "!src/**/*.d.ts",
+    "!src/index.ts",
+    "!src/setupTests.ts",
   ],
   coverageThreshold: {
     global: {
@@ -21,6 +21,6 @@ export default {
     },
   },
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
+    "^@/(.*)$": "<rootDir>/src/$1",
   },
 };
