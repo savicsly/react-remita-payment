@@ -18,7 +18,7 @@ export interface SplitPayment {
   deductFeeFrom: number;
 }
 export interface PaymentRequest {
-  amount: number;
+  amount: number | string;
   email: string;
   firstName: string;
   lastName: string;
@@ -32,7 +32,7 @@ export interface PaymentResponse {
   transactionId: string;
   paymentReference?: string;
   message: string;
-  amount?: number;
+  amount?: number | string;
   currency?: string;
   channel?: string;
   gatewayResponseCode?: string;
@@ -72,13 +72,14 @@ declare global {
       showPaymentWidget: () => void;
       hidePaymentWidget: () => void;
     };
+    remitaAsyncInit?: () => void;
   }
 }
 export interface RemitaInitOptions {
   key: string;
   processRrr: boolean;
   transactionId: string;
-  amount: number;
+  amount: number | string;
   currency: string;
   customerId: string;
   firstName: string;

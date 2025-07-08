@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useRemitaPayment } from "../hooks/useRemitaPayment";
 import { RemitaPaymentProps } from "../types";
-import { generateTransactionRef } from "../utils/validation";
+import { generateTransactionRef, isHighValueAmount } from "../utils/validation";
 
 /**
  * RemitaPayment component for processing inline payments with Remita
@@ -28,31 +28,28 @@ const RemitaPayment: React.FC<RemitaPaymentProps> = ({
   className = "",
   children,
 }) => {
-  // Simple client-side mounting state
+  // Client-side mounting detection (for SSR compatibility)
   const [isMounted, setIsMounted] = useState(false);
-  
-  // Mount detection that works in both React and Next.js
+
+  // Mount detection - simpler and more reliable
   useEffect(() => {
-    // Only set mounted in browser environment
-    if (typeof window !== 'undefined') {
-      setIsMounted(true);
-    }
+    // Set mounted flag only in browser
+    setIsMounted(true);
   }, []);
 
-  // Use the hook with universal compatibility
-  const { initiatePayment, isLoading, error, isScriptLoaded } =
-    useRemitaPayment({
-      config,
-      environment,
-      onSuccess,
-      onError,
-      onClose
-    });
+  // Use the payment hook
+  const { initiatePayment, isLoading, error } = useRemitaPayment({
+    config,
+    environment,
+    onSuccess,
+    onError,
+    onClose,
+  });
 
-  // Safe payment handler that works in all environments
+  // Handle payment initiation with enhanced safety checks
   const handlePayment = async () => {
-    // Guard against calls during SSR or before mounting
-    if (disabled || isLoading || !isScriptLoaded || !isMounted) {
+    // Skip payment if conditions aren't met
+    if (!isMounted || isLoading || disabled) {
       return;
     }
 
@@ -62,19 +59,46 @@ const RemitaPayment: React.FC<RemitaPaymentProps> = ({
       transactionId: paymentData.transactionId || generateTransactionRef(),
     };
 
-    await initiatePayment(paymentWithRef);
+    // Check if this is a high-value transaction
+    if (isHighValueAmount(paymentData.amount)) {
+      // Format the amount for display
+      const formattedAmount =
+        typeof paymentData.amount === "number"
+          ? paymentData.amount.toLocaleString(undefined, {
+              maximumFractionDigits: 2,
+            })
+          : paymentData.amount;
+
+      // Ask for confirmation before proceeding with high-value transaction
+      const confirmHighValue = window.confirm(
+        `You're about to make a high-value payment of ${formattedAmount}. Are you sure you want to proceed?`
+      );
+
+      if (!confirmHighValue) {
+        return; // User canceled the high-value transaction
+      }
+    }
+
+    try {
+      // Attempt payment, even if script isn't marked as loaded yet
+      // The initiatePayment function will handle loading if needed
+      await initiatePayment(paymentWithRef);
+    } catch (error) {
+      console.error("Payment initiation failed:", error);
+      // Error is handled within useRemitaPayment hook
+    }
   };
 
-  // Show different button text based on component state
-  const buttonText = isLoading
-    ? "Processing..."
-    : !isMounted || !isScriptLoaded
+  // Determine button text based on component state with clearer loading states
+  const buttonText = !isMounted
     ? "Loading..."
+    : isLoading
+    ? "Processing Payment..."
     : children || "Pay Now";
 
-  // Button remains disabled during SSR and until mounted
-  const isButtonDisabled =
-    disabled || isLoading || !isScriptLoaded || !isMounted || !!error;
+  // We only disable the button in critical cases, allowing clicks to trigger script load
+  // This improves user experience when script loading is delayed
+  const isButtonDisabled = !isMounted || isLoading || disabled || !!error;
 
   return (
     <div className={`remita-payment-container ${className}`}>
@@ -82,12 +106,15 @@ const RemitaPayment: React.FC<RemitaPaymentProps> = ({
         type="button"
         onClick={handlePayment}
         disabled={isButtonDisabled}
-        className="remita-payment-button"
+        className={`remita-payment-button${
+          isButtonDisabled ? " remita-payment-button-disabled" : ""
+        }`}
         aria-label="Initiate Remita payment"
         style={{
           cursor: isButtonDisabled ? "not-allowed" : "pointer",
           opacity: isButtonDisabled ? 0.7 : 1,
         }}
+        data-testid="remita-payment-button"
       >
         {buttonText}
       </button>

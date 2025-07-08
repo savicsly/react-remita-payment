@@ -21,7 +21,24 @@ export var validatePhoneNumber = function (phoneNumber) {
 };
 // Validates amount to ensure it's positive and within reasonable limits
 export var validateAmount = function (amount) {
-    return amount > 0 && amount <= 10000000 && Number.isFinite(amount);
+    // If it's a string, try to convert it to a number
+    if (typeof amount === "string") {
+        var parsedAmount = parseFloat(amount);
+        if (isNaN(parsedAmount)) {
+            return false;
+        }
+        amount = parsedAmount;
+    }
+    // Only basic validation for positive, finite numbers
+    // No upper limit, just check it's a positive valid number
+    return amount > 0 && Number.isFinite(amount);
+};
+// Check if an amount is considered "high value" and needs confirmation
+export var isHighValueAmount = function (amount) {
+    // Convert to number if string
+    var numAmount = typeof amount === "string" ? parseFloat(amount) : amount;
+    // Consider anything over 10M as high value requiring confirmation
+    return numAmount > 10000000 && Number.isFinite(numAmount);
 };
 // Validates transaction ID format
 export var validateTransactionId = function (transactionId) {
@@ -39,8 +56,12 @@ export var sanitizeString = function (input) {
 // Validates the entire payment request
 export var validatePaymentRequest = function (paymentData) {
     var errors = [];
-    if (!paymentData.amount || !validateAmount(paymentData.amount)) {
-        errors.push("Invalid amount. Amount must be a positive number and not exceed 10,000,000");
+    // More robust amount validation
+    if (paymentData.amount === undefined || paymentData.amount === null) {
+        errors.push("Amount is required");
+    }
+    else if (!validateAmount(paymentData.amount)) {
+        errors.push("Invalid amount. Amount must be a positive number");
     }
     if (!paymentData.email || !validateEmail(paymentData.email)) {
         errors.push("Invalid email address format");

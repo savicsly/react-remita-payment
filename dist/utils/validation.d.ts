@@ -1,7 +1,8 @@
 import { PaymentRequest, RemitaConfig } from "../types";
 export declare const validateEmail: (email: string) => boolean;
 export declare const validatePhoneNumber: (phoneNumber: string) => boolean;
-export declare const validateAmount: (amount: number) => boolean;
+export declare const validateAmount: (amount: number | string) => boolean;
+export declare const isHighValueAmount: (amount: number | string) => boolean;
 export declare const validateTransactionId: (transactionId: string) => boolean;
 export declare const sanitizeString: (input: string) => string;
 export declare const validatePaymentRequest: (paymentData: PaymentRequest) => string[];

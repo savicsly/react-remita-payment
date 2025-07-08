@@ -20,7 +20,7 @@ interface SplitPayment {
     deductFeeFrom: number;
 }
 interface PaymentRequest {
-    amount: number;
+    amount: number | string;
     email: string;
     firstName: string;
     lastName: string;
@@ -34,7 +34,7 @@ interface PaymentResponse {
     transactionId: string;
     paymentReference?: string;
     message: string;
-    amount?: number;
+    amount?: number | string;
     currency?: string;
     channel?: string;
     gatewayResponseCode?: string;
@@ -74,13 +74,14 @@ declare global {
             showPaymentWidget: () => void;
             hidePaymentWidget: () => void;
         };
+        remitaAsyncInit?: () => void;
     }
 }
 interface RemitaInitOptions {
     key: string;
     processRrr: boolean;
     transactionId: string;
-    amount: number;
+    amount: number | string;
     currency: string;
     customerId: string;
     firstName: string;
@@ -115,11 +116,17 @@ interface UseRemitaPaymentProps {
     onError: PaymentErrorCallback;
     onClose: PaymentCloseCallback;
 }
+/**
+ * Custom hook for Remita payment integration.
+ * This hook abstracts the complexity of loading the Remita script
+ * and initiating a payment, designed to work seamlessly in
+ * both standard React and Next.js (SSR) applications.
+ */
 declare const useRemitaPayment: (props: UseRemitaPaymentProps) => UseRemitaPaymentReturn;
 
 declare const validateEmail: (email: string) => boolean;
 declare const validatePhoneNumber: (phoneNumber: string) => boolean;
-declare const validateAmount: (amount: number) => boolean;
+declare const validateAmount: (amount: number | string) => boolean;
 declare const validateTransactionId: (transactionId: string) => boolean;
 declare const sanitizeString: (input: string) => string;
 declare const validatePaymentRequest: (paymentData: PaymentRequest) => string[];

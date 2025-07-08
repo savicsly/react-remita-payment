@@ -46,9 +46,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRemitaPayment } from "../hooks/useRemitaPayment";
-import { generateTransactionRef } from "../utils/validation";
+import { generateTransactionRef, isHighValueAmount } from "../utils/validation";
 /**
  * RemitaPayment component for processing inline payments with Remita
  * Works universally in both React and Next.js environments
@@ -65,52 +65,75 @@ import { generateTransactionRef } from "../utils/validation";
  */
 var RemitaPayment = function (_a) {
     var config = _a.config, paymentData = _a.paymentData, _b = _a.environment, environment = _b === void 0 ? "demo" : _b, onSuccess = _a.onSuccess, onError = _a.onError, onClose = _a.onClose, _c = _a.disabled, disabled = _c === void 0 ? false : _c, _d = _a.className, className = _d === void 0 ? "" : _d, children = _a.children;
-    // Simple client-side mounting state
+    // Client-side mounting detection (for SSR compatibility)
     var _e = useState(false), isMounted = _e[0], setIsMounted = _e[1];
-    // Mount detection that works in both React and Next.js
+    // Mount detection - simpler and more reliable
     useEffect(function () {
-        // Only set mounted in browser environment
-        if (typeof window !== 'undefined') {
-            setIsMounted(true);
-        }
+        // Set mounted flag only in browser
+        setIsMounted(true);
     }, []);
-    // Use the hook with universal compatibility
+    // Use the payment hook
     var _f = useRemitaPayment({
         config: config,
         environment: environment,
         onSuccess: onSuccess,
         onError: onError,
-        onClose: onClose
-    }), initiatePayment = _f.initiatePayment, isLoading = _f.isLoading, error = _f.error, isScriptLoaded = _f.isScriptLoaded;
-    // Safe payment handler that works in all environments
+        onClose: onClose,
+    }), initiatePayment = _f.initiatePayment, isLoading = _f.isLoading, error = _f.error;
+    // Handle payment initiation with enhanced safety checks
     var handlePayment = function () { return __awaiter(void 0, void 0, void 0, function () {
-        var paymentWithRef;
+        var paymentWithRef, formattedAmount, confirmHighValue, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    // Guard against calls during SSR or before mounting
-                    if (disabled || isLoading || !isScriptLoaded || !isMounted) {
+                    // Skip payment if conditions aren't met
+                    if (!isMounted || isLoading || disabled) {
                         return [2 /*return*/];
                     }
                     paymentWithRef = __assign(__assign({}, paymentData), { transactionId: paymentData.transactionId || generateTransactionRef() });
-                    return [4 /*yield*/, initiatePayment(paymentWithRef)];
+                    // Check if this is a high-value transaction
+                    if (isHighValueAmount(paymentData.amount)) {
+                        formattedAmount = typeof paymentData.amount === "number"
+                            ? paymentData.amount.toLocaleString(undefined, {
+                                maximumFractionDigits: 2,
+                            })
+                            : paymentData.amount;
+                        confirmHighValue = window.confirm("You're about to make a high-value payment of ".concat(formattedAmount, ". Are you sure you want to proceed?"));
+                        if (!confirmHighValue) {
+                            return [2 /*return*/]; // User canceled the high-value transaction
+                        }
+                    }
+                    _a.label = 1;
                 case 1:
+                    _a.trys.push([1, 3, , 4]);
+                    // Attempt payment, even if script isn't marked as loaded yet
+                    // The initiatePayment function will handle loading if needed
+                    return [4 /*yield*/, initiatePayment(paymentWithRef)];
+                case 2:
+                    // Attempt payment, even if script isn't marked as loaded yet
+                    // The initiatePayment function will handle loading if needed
                     _a.sent();
-                    return [2 /*return*/];
+                    return [3 /*break*/, 4];
+                case 3:
+                    error_1 = _a.sent();
+                    console.error("Payment initiation failed:", error_1);
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
             }
         });
     }); };
-    // Show different button text based on component state
-    var buttonText = isLoading
-        ? "Processing..."
-        : !isMounted || !isScriptLoaded
-            ? "Loading..."
+    // Determine button text based on component state with clearer loading states
+    var buttonText = !isMounted
+        ? "Loading..."
+        : isLoading
+            ? "Processing Payment..."
             : children || "Pay Now";
-    // Button remains disabled during SSR and until mounted
-    var isButtonDisabled = disabled || isLoading || !isScriptLoaded || !isMounted || !!error;
-    return (_jsxs("div", { className: "remita-payment-container ".concat(className), children: [_jsx("button", { type: "button", onClick: handlePayment, disabled: isButtonDisabled, className: "remita-payment-button", "aria-label": "Initiate Remita payment", style: {
+    // We only disable the button in critical cases, allowing clicks to trigger script load
+    // This improves user experience when script loading is delayed
+    var isButtonDisabled = !isMounted || isLoading || disabled || !!error;
+    return (_jsxs("div", { className: "remita-payment-container ".concat(className), children: [_jsx("button", { type: "button", onClick: handlePayment, disabled: isButtonDisabled, className: "remita-payment-button".concat(isButtonDisabled ? " remita-payment-button-disabled" : ""), "aria-label": "Initiate Remita payment", style: {
                     cursor: isButtonDisabled ? "not-allowed" : "pointer",
                     opacity: isButtonDisabled ? 0.7 : 1,
-                }, children: buttonText }), error && isMounted && (_jsx("div", { className: "remita-payment-error", role: "alert", children: _jsxs("span", { children: ["Payment Error: ", error] }) }))] }));
+                }, "data-testid": "remita-payment-button", children: buttonText }), error && isMounted && (_jsx("div", { className: "remita-payment-error", role: "alert", children: _jsxs("span", { children: ["Payment Error: ", error] }) }))] }));
 };
 export default RemitaPayment;

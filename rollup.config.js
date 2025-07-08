@@ -25,6 +25,8 @@ export default async () => {
       plugins: [
         peerDepsExternal(),
         typescript({
+          tsconfig: "./tsconfig.json",
+          tsconfigOverride: { include: ["src", "src/types/global.d.ts"] },
           useTsconfigDeclarationDir: true,
         }),
         terser(),
