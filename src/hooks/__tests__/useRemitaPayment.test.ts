@@ -129,9 +129,7 @@ describe("useRemitaPayment", () => {
     await act(async () => {});
     await waitFor(
       () => {
-        expect(result.current?.error).toMatch(
-          /Failed to load Remita script/
-        );
+        expect(result.current?.error).toMatch(/Failed to load Remita script/);
       },
       { timeout: 5000 }
     );
