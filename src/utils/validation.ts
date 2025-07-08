@@ -85,9 +85,19 @@ export const generateTransactionRef = (prefix: string = "RMT"): string => {
 };
 // Validates that required environment variables are set
 export const validateEnvironment = (win?: typeof window): boolean => {
-  if (typeof win === "undefined") {
-    return false;
+  // Most robust check for browser environment - always return true during SSR
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    // We're in SSR, always consider this valid and defer validation to client
+    return true;
   }
+  
+  // If window is undefined but global window exists, use the global window
+  if (typeof win === "undefined") {
+    win = window;
+  }
+  
+  // At this point, we're definitely in a browser
+  
   // Warn if not using HTTPS in production
   if (
     process.env.NODE_ENV === "production" &&
@@ -95,7 +105,8 @@ export const validateEnvironment = (win?: typeof window): boolean => {
   ) {
     console.warn("HTTPS is recommended for production payment processing");
   }
-  return true;
+  
+  return true; // Consider all browser environments valid
 };
 // Masks sensitive data for logging
 export const maskSensitiveData = (data: unknown): Record<string, unknown> => {

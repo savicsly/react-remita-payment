@@ -11,6 +11,7 @@ import {
   UseRemitaPaymentReturn,
 } from "../types";
 import {
+  // We still import validateEnvironment for type checking
   validateEnvironment,
   validatePaymentRequest,
   validateRemitaConfig,
@@ -57,85 +58,115 @@ export const useRemitaPayment = (
     onSuccess,
     onError,
     onClose,
-    win,
+    win = typeof window !== "undefined" ? window : undefined,
   } = props;
 
-  let initialError: string | null = null;
-  if (!validateEnvironment(win)) {
-    initialError = "Invalid environment for payment processing";
-  } else {
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
+  
+  const setErrorSafe = useCallback((val: string | null) => {
+    // Only set errors when mounted to prevent hydration issues
+    if (isMounted) {
+      setError(val);
+    }
+  }, [isMounted]);
+  
+  // Handle initial mount for SSR
+  useEffect(() => {
+    // Robust check to ensure we're fully hydrated in the browser
+    const timer = setTimeout(() => {
+      setIsMounted(true);
+    }, 0);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Perform validation only after component is safely mounted
+  useEffect(() => {
+    if (!isMounted) return;
+    
+    // Now that we're mounted in the client, perform validation
+    let nextError: string | null = null;
     const configErrs = validateRemitaConfig(config);
     if (configErrs.length > 0) {
-      initialError = `Configuration errors: ${configErrs.join(", ")}`;
+      nextError = `Configuration errors: ${configErrs.join(", ")}`;
     }
-  }
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(initialError);
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
+    
+    if (nextError) setErrorSafe(nextError);
+  }, [isMounted, config, setErrorSafe]);
 
-  const setErrorSafe = (val: string | null) => {
-    setError(val);
-  };
-
-  useEffect(() => {
-    let nextError: string | null = null;
-    if (!validateEnvironment(win)) {
-      nextError = "Invalid environment for payment processing";
-    } else {
-      const configErrs = validateRemitaConfig(config);
-      if (configErrs.length > 0) {
-        nextError = `Configuration errors: ${configErrs.join(", ")}`;
-      }
-    }
-    if (error === null && nextError !== null) setErrorSafe(nextError);
-  }, [win, config, error]);
+  // We've removed the redundant effect as we're handling validation in the previous effect
 
   const scriptRef = useRef<HTMLScriptElement | null>(null);
   const configErrors = useRef<string[]>([]);
 
   const loadRemitaScript = useCallback((): Promise<void> => {
     return new Promise((resolve, reject) => {
-      if (win && hasRmPaymentEngine(win) && isScriptLoaded) {
+      // Check if we're in browser environment
+      const currentWindow =
+        win || (typeof window !== "undefined" ? window : undefined);
+
+      if (!currentWindow) {
+        // We're in SSR and can't load scripts, resolve without error as this will be retried client-side
+        console.warn(
+          "RemitaPayment: Detected SSR environment, deferring script loading to client"
+        );
+        setIsScriptLoaded(false);
         resolve();
         return;
       }
-      if (!win) {
-        setErrorSafe("Invalid environment for payment processing");
-        reject(new Error("Invalid environment for payment processing"));
+
+      if (hasRmPaymentEngine(currentWindow) && isScriptLoaded) {
+        resolve();
         return;
       }
-      const existingScript = win.document.querySelector(
-        `script[src="${SCRIPT_URLS[environment]}"]`
-      );
-      if (existingScript) {
-        existingScript.addEventListener("load", () => {
+
+      try {
+        const existingScript = currentWindow.document.querySelector(
+          `script[src="${SCRIPT_URLS[environment]}"]`
+        );
+
+        if (existingScript) {
+          existingScript.addEventListener("load", () => {
+            setIsScriptLoaded(true);
+            resolve();
+          });
+          existingScript.addEventListener("error", () => {
+            setErrorSafe("Failed to load Remita payment script");
+            reject(new Error("Failed to load Remita payment script"));
+          });
+          return;
+        }
+
+        const script = currentWindow.document.createElement("script");
+        script.src = SCRIPT_URLS[environment];
+        script.async = true;
+        script.defer = true;
+        script.onload = () => {
           setIsScriptLoaded(true);
+          scriptRef.current = script;
           resolve();
-        });
-        existingScript.addEventListener("error", () => {
+        };
+        script.onerror = () => {
           setErrorSafe("Failed to load Remita payment script");
           reject(new Error("Failed to load Remita payment script"));
-        });
-        return;
-      }
-      const script = win.document.createElement("script");
-      script.src = SCRIPT_URLS[environment];
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        setIsScriptLoaded(true);
-        scriptRef.current = script;
-        resolve();
-      };
-      script.onerror = () => {
+        };
+        script.setAttribute("crossorigin", "anonymous");
+        script.setAttribute(
+          "referrerpolicy",
+          "strict-origin-when-cross-origin"
+        );
+        currentWindow.document.body.appendChild(script);
+      } catch (error) {
+        // Handle any DOM errors that might occur in different environments
+        console.error("RemitaPayment: Error loading script:", error);
         setErrorSafe("Failed to load Remita payment script");
         reject(new Error("Failed to load Remita payment script"));
-      };
-      script.setAttribute("crossorigin", "anonymous");
-      script.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
-      win.document.body.appendChild(script);
+      }
     });
-  }, [environment, isScriptLoaded, win]);
+  }, [environment, isScriptLoaded, win, setErrorSafe]);
 
   useEffect(() => {
     return () => {
@@ -147,10 +178,16 @@ export const useRemitaPayment = (
 
   const initiatePayment = useCallback(
     async (paymentData: PaymentRequest): Promise<void> => {
-      if (!validateEnvironment(win)) {
-        setErrorSafe("Invalid environment for payment processing");
+      // Get the current window object, either from props or global
+      const currentWindow =
+        win || (typeof window !== "undefined" ? window : undefined);
+
+      // Safety check for SSR environments
+      if (!currentWindow) {
+        setErrorSafe("Payment can only be initiated in a browser environment");
         return;
       }
+
       try {
         setIsLoading(true);
         setErrorSafe(null);
@@ -166,7 +203,7 @@ export const useRemitaPayment = (
         if (!isScriptLoaded) {
           await loadRemitaScript();
         }
-        if (!win || !hasRmPaymentEngine(win)) {
+        if (!currentWindow || !hasRmPaymentEngine(currentWindow)) {
           throw new Error("Remita payment engine not available");
         }
         const paymentOptions = {
@@ -217,8 +254,9 @@ export const useRemitaPayment = (
           },
         };
 
-        win.RmPaymentEngine.init(paymentOptions);
-        win.RmPaymentEngine.showPaymentWidget();
+        // We've already verified currentWindow and RmPaymentEngine exist
+        currentWindow.RmPaymentEngine.init(paymentOptions);
+        currentWindow.RmPaymentEngine.showPaymentWidget();
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : "Unknown error occurred";
@@ -230,40 +268,57 @@ export const useRemitaPayment = (
         });
       }
     },
-    [config, isScriptLoaded, loadRemitaScript, onSuccess, onError, onClose, win]
+    [config, isScriptLoaded, loadRemitaScript, onSuccess, onError, onClose, win, setErrorSafe]
   );
 
   const alwaysSafeInitiatePayment = useCallback(
     async (paymentData: PaymentRequest): Promise<void> => {
-      if (!validateEnvironment(win)) {
-        setErrorSafe("Invalid environment for payment processing");
+      // Get the current window object, either from props or global
+      const currentWindow =
+        win || (typeof window !== "undefined" ? window : undefined);
+
+      // In SSR, defer validation until client-side
+      if (typeof window === "undefined") {
+        return Promise.resolve(); // We're in SSR, will retry on client-side
+      }
+
+      // Use validateEnvironment to ensure we're in a browser context
+      if (!validateEnvironment(currentWindow)) {
+        const errorMsg =
+          "Payment can only be initiated in a browser environment";
+        setErrorSafe(errorMsg);
         onError({
           status: "error",
-          message: "Invalid environment for payment processing",
+          message: errorMsg,
         });
         return Promise.resolve();
       }
+
       const configErrs = validateRemitaConfig(config);
       if (configErrs.length > 0) {
-        setErrorSafe(`Configuration errors: ${configErrs.join(", ")}`);
+        const errorMsg = `Configuration errors: ${configErrs.join(", ")}`;
+        setErrorSafe(errorMsg);
         onError({
           status: "error",
-          message: `Configuration errors: ${configErrs.join(", ")}`,
+          message: errorMsg,
         });
         return Promise.resolve();
       }
+
       const paymentErrors = validatePaymentRequest(paymentData);
       if (paymentErrors.length > 0) {
-        setErrorSafe(`Payment data errors: ${paymentErrors.join(", ")}`);
+        const errorMsg = `Payment data errors: ${paymentErrors.join(", ")}`;
+        setErrorSafe(errorMsg);
         onError({
           status: "error",
-          message: `Payment data errors: ${paymentErrors.join(", ")}`,
+          message: errorMsg,
         });
         return Promise.resolve();
       }
+
       return initiatePayment(paymentData);
     },
-    [win, config, initiatePayment, onError]
+    [win, config, initiatePayment, onError, setErrorSafe]
   );
 
   return {

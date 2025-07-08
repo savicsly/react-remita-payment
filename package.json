@@ -1,8 +1,8 @@
 {
   "type": "module",
   "name": "react-remita-payment",
-  "version": "1.0.0",
-  "description": "A modern React component for processing Remita payments using their inline script with security best practices",
+  "version": "1.1.0",
+  "description": "A modern React component for processing Remita payments using their inline script with SSR support and security best practices",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -29,7 +29,11 @@
     "gateway",
     "inline",
     "typescript",
-    "secure"
+    "secure",
+    "ssr",
+    "next.js",
+    "remix",
+    "server-side-rendering"
   ],
   "author": "Victor Bala",
   "license": "MIT",

@@ -15,6 +15,7 @@ A modern, secure React component library for processing payments using Remita's 
 - 📱 **Responsive**: Works seamlessly across different screen sizes
 - 🔧 **Developer Friendly**: Easy to integrate with clear API and helpful error messages
 - 🌍 **Environment Support**: Separate demo and live environments
+- 🖥️ **Framework Agnostic**: Works with React, Next.js, Remix, and other frameworks with SSR support
 
 ## Installation
 
@@ -314,3 +315,39 @@ For more information about Remita's payment API, visit:
 ---
 
 **Note**: This is an unofficial React wrapper for Remita's payment system. Make sure to test thoroughly in the demo environment before going live.
+
+## Server-Side Rendering (SSR) Support
+
+This library is fully compatible with frameworks that use server-side rendering, such as Next.js, Remix, and Gatsby.
+
+### Using with Next.js
+
+```tsx
+"use client"; // Mark as client component in Next.js App Router
+
+import { RemitaPayment } from "react-remita-payment";
+
+export default function PaymentPage() {
+  // Component will gracefully handle SSR and hydration
+  return (
+    <RemitaPayment
+      config={config}
+      paymentData={paymentData}
+      environment="live"
+      onSuccess={handleSuccess}
+      onError={handleError}
+      onClose={handleClose}
+    >
+      Pay Now
+    </RemitaPayment>
+  );
+}
+```
+
+The component automatically:
+
+1. Detects server-side rendering environments
+2. Displays a loading state during SSR
+3. Initializes payment functionality after hydration
+4. Handles window/document references safely
+5. Manages script loading appropriately
