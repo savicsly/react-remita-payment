@@ -1,7 +1,7 @@
 {
   "type": "module",
   "name": "react-remita-payment",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "A modern React component for processing Remita payments with robust SSR support for Next.js and other frameworks, using their inline script with security best practices",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
