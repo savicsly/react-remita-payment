@@ -35,9 +35,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import { useCallback, useEffect, useRef, useState } from "react";
-import { 
-// We still import validateEnvironment for type checking
-validateEnvironment, validatePaymentRequest, validateRemitaConfig, } from "../utils/validation";
+import { validatePaymentRequest, validateRemitaConfig, } from "../utils/validation";
 var SCRIPT_URLS = {
     demo: "https://remitademo.net/payment/v1/remita-pay-inline.bundle.js",
     live: "https://login.remita.net/payment/v1/remita-pay-inline.bundle.js",
@@ -52,13 +50,12 @@ function hasRmPaymentEngine(obj) {
             "function");
 }
 export var useRemitaPayment = function (props) {
-    var config = props.config, _a = props.environment, environment = _a === void 0 ? "demo" : _a, onSuccess = props.onSuccess, onError = props.onError, onClose = props.onClose, _b = props.win, win = _b === void 0 ? typeof window !== "undefined" ? window : undefined : _b;
-    var _c = useState(false), isLoading = _c[0], setIsLoading = _c[1];
-    var _d = useState(null), error = _d[0], setError = _d[1];
-    var _e = useState(false), isScriptLoaded = _e[0], setIsScriptLoaded = _e[1];
-    // Use refs to track hydration and mounting states for SSR compatibility
-    var _f = useState(false), isMounted = _f[0], setIsMounted = _f[1];
-    var hydrationComplete = useRef(false);
+    var config = props.config, _a = props.environment, environment = _a === void 0 ? "demo" : _a, onSuccess = props.onSuccess, onError = props.onError, onClose = props.onClose;
+    var _b = useState(false), isLoading = _b[0], setIsLoading = _b[1];
+    var _c = useState(null), error = _c[0], setError = _c[1];
+    var _d = useState(false), isScriptLoaded = _d[0], setIsScriptLoaded = _d[1];
+    // Use state to track client-side mounting
+    var _e = useState(false), isMounted = _e[0], setIsMounted = _e[1];
     // Safe error setter that only works after component is mounted
     var setErrorSafe = useCallback(function (val) {
         // Only set errors when mounted to prevent hydration issues
@@ -66,30 +63,16 @@ export var useRemitaPayment = function (props) {
             setError(val);
         }
     }, [isMounted]);
-    // Handle initial mount and hydration for SSR
+    // Handle initial mount for any environment
     useEffect(function () {
-        // Detect if we're in browser environment
+        // Skip in SSR context
         if (typeof window === "undefined" || typeof document === "undefined") {
-            return; // Skip in SSR context
+            return;
         }
-        // For NextJS and other frameworks with hydration
-        if (document.readyState === "complete" || document.readyState === "interactive") {
-            hydrationComplete.current = true;
-        }
-        else {
-            // Wait for complete DOM loading if not already complete
-            var completeHydration_1 = function () {
-                hydrationComplete.current = true;
-                // Using a small delay ensures all React hydration is complete too
-                setTimeout(function () { return setIsMounted(true); }, 20);
-            };
-            window.addEventListener("DOMContentLoaded", completeHydration_1);
-            return function () { return window.removeEventListener("DOMContentLoaded", completeHydration_1); };
-        }
-        // Small delay to ensure React hydration is complete
+        // Simple mounting detection - works in all React environments
         var timer = setTimeout(function () {
             setIsMounted(true);
-        }, 20);
+        }, 0);
         return function () { return clearTimeout(timer); };
     }, []);
     // Perform validation only after component is safely mounted
@@ -116,22 +99,19 @@ export var useRemitaPayment = function (props) {
         return new Promise(function (resolve, reject) {
             // Robust check if we're in browser environment
             var isClient = typeof window !== "undefined" && typeof document !== "undefined";
-            var currentWindow = isClient ? (win || window) : undefined;
-            if (!currentWindow) {
+            if (!isClient) {
                 // We're in SSR environment - gracefully resolve without error
-                console.log("RemitaPayment: SSR environment detected, deferring script loading to client");
                 // Don't set any state in SSR to avoid hydration issues
                 resolve();
                 return;
             }
             // If we already have the Remita engine loaded, we can skip loading
-            if (hasRmPaymentEngine(currentWindow) && isScriptLoaded) {
+            if (window.RmPaymentEngine && isScriptLoaded) {
                 resolve();
                 return;
             }
             // Extra check to ensure DOM is fully available
-            if (!currentWindow.document || !currentWindow.document.body) {
-                console.warn("RemitaPayment: Document body not available yet, deferring script load");
+            if (!document || !document.body) {
                 // Set a short timeout to retry after hydration
                 setTimeout(function () {
                     loadRemitaScript().then(resolve).catch(reject);
@@ -141,10 +121,10 @@ export var useRemitaPayment = function (props) {
             try {
                 // Check if script is already loaded or loading
                 var scriptUrl = SCRIPT_URLS[environment];
-                var existingScript_1 = currentWindow.document.querySelector("script[src=\"".concat(scriptUrl, "\"]"));
+                var existingScript_1 = document.querySelector("script[src=\"".concat(scriptUrl, "\"]"));
                 if (existingScript_1) {
                     // Script already exists, listen for its load/error events
-                    if (existingScript_1.hasAttribute("data-loaded") || hasRmPaymentEngine(currentWindow)) {
+                    if (existingScript_1.hasAttribute("data-loaded") || window.RmPaymentEngine) {
                         // Script is already loaded
                         setIsScriptLoaded(true);
                         resolve();
@@ -170,7 +150,7 @@ export var useRemitaPayment = function (props) {
                     return;
                 }
                 // Create and append the script
-                var script_1 = currentWindow.document.createElement("script");
+                var script_1 = document.createElement("script");
                 script_1.src = scriptUrl;
                 script_1.async = true;
                 script_1.defer = true;
@@ -189,7 +169,7 @@ export var useRemitaPayment = function (props) {
                 script_1.setAttribute("crossorigin", "anonymous");
                 script_1.setAttribute("referrerpolicy", "strict-origin-when-cross-origin");
                 script_1.setAttribute("data-remita", "payment-script");
-                currentWindow.document.body.appendChild(script_1);
+                document.body.appendChild(script_1);
             }
             catch (error) {
                 // Handle any DOM errors that might occur in different environments
@@ -198,7 +178,7 @@ export var useRemitaPayment = function (props) {
                 reject(new Error("Failed to load Remita payment script"));
             }
         });
-    }, [environment, isScriptLoaded, win, setErrorSafe]);
+    }, [environment, isScriptLoaded, setErrorSafe]);
     useEffect(function () {
         return function () {
             if (scriptRef.current && scriptRef.current.parentNode) {
@@ -207,15 +187,14 @@ export var useRemitaPayment = function (props) {
         };
     }, []);
     var initiatePayment = useCallback(function (paymentData) { return __awaiter(void 0, void 0, void 0, function () {
-        var currentWindow, paymentErrors, paymentOptions, err_1, errorMessage;
+        var paymentErrors, paymentOptions, err_1, errorMessage;
         var _a, _b, _c;
         return __generator(this, function (_d) {
             switch (_d.label) {
                 case 0:
-                    currentWindow = win || (typeof window !== "undefined" ? window : undefined);
                     // Safety check for SSR environments
-                    if (!currentWindow) {
-                        setErrorSafe("Payment can only be initiated in a browser environment");
+                    if (typeof window === "undefined") {
+                        // We're in SSR, do nothing
                         return [2 /*return*/];
                     }
                     _d.label = 1;
@@ -223,9 +202,6 @@ export var useRemitaPayment = function (props) {
                     _d.trys.push([1, 4, , 5]);
                     setIsLoading(true);
                     setErrorSafe(null);
-                    if (configErrors.current.length > 0) {
-                        throw new Error("Configuration errors: ".concat(configErrors.current.join(", ")));
-                    }
                     paymentErrors = validatePaymentRequest(paymentData);
                     if (paymentErrors.length > 0) {
                         throw new Error("Payment data errors: ".concat(paymentErrors.join(", ")));
@@ -236,7 +212,8 @@ export var useRemitaPayment = function (props) {
                     _d.sent();
                     _d.label = 3;
                 case 3:
-                    if (!currentWindow || !hasRmPaymentEngine(currentWindow)) {
+                    // Check if Remita engine is available
+                    if (!window.RmPaymentEngine) {
                         throw new Error("Remita payment engine not available");
                     }
                     paymentOptions = {
@@ -285,9 +262,9 @@ export var useRemitaPayment = function (props) {
                             onClose();
                         },
                     };
-                    // We've already verified currentWindow and RmPaymentEngine exist
-                    currentWindow.RmPaymentEngine.init(paymentOptions);
-                    currentWindow.RmPaymentEngine.showPaymentWidget();
+                    // Initialize and show payment widget
+                    window.RmPaymentEngine.init(paymentOptions);
+                    window.RmPaymentEngine.showPaymentWidget();
                     return [3 /*break*/, 5];
                 case 4:
                     err_1 = _d.sent();
@@ -310,26 +287,14 @@ export var useRemitaPayment = function (props) {
         onSuccess,
         onError,
         onClose,
-        setIsLoading,
-        win
+        setIsLoading
     ]);
     var alwaysSafeInitiatePayment = useCallback(function (paymentData) { return __awaiter(void 0, void 0, void 0, function () {
-        var currentWindow, errorMsg, configErrs, errorMsg, paymentErrors, errorMsg;
+        var configErrs, errorMsg, paymentErrors, errorMsg;
         return __generator(this, function (_a) {
-            currentWindow = win || (typeof window !== "undefined" ? window : undefined);
             // In SSR, defer validation until client-side
             if (typeof window === "undefined") {
                 return [2 /*return*/, Promise.resolve()]; // We're in SSR, will retry on client-side
-            }
-            // Use validateEnvironment to ensure we're in a browser context
-            if (!validateEnvironment(currentWindow)) {
-                errorMsg = "Payment can only be initiated in a browser environment";
-                setErrorSafe(errorMsg);
-                onError({
-                    status: "error",
-                    message: errorMsg,
-                });
-                return [2 /*return*/, Promise.resolve()];
             }
             configErrs = validateRemitaConfig(config);
             if (configErrs.length > 0) {
@@ -351,9 +316,10 @@ export var useRemitaPayment = function (props) {
                 });
                 return [2 /*return*/, Promise.resolve()];
             }
+            // If we pass all checks, proceed with payment
             return [2 /*return*/, initiatePayment(paymentData)];
         });
-    }); }, [win, config, initiatePayment, onError, setErrorSafe]);
+    }); }, [config, initiatePayment, onError, setErrorSafe]);
     return {
         initiatePayment: alwaysSafeInitiatePayment,
         isLoading: isLoading,

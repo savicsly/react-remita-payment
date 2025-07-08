@@ -9,11 +9,10 @@ export declare const validateRemitaConfig: (config: RemitaConfig) => string[];
 export declare const generateTransactionRef: (prefix?: string) => string;
 /**
  * Validates that we are in an appropriate environment for payment processing.
- * In SSR environments, always returns true and defers validation to client.
- * In browser environments, performs additional checks for security.
+ * Designed to work seamlessly in both client-side React and SSR frameworks like Next.js.
+ * Always returns true during SSR to prevent rendering errors.
  *
- * @param win Optional window object to use instead of global window
- * @returns boolean indicating if the environment is valid
+ * @returns boolean indicating if the environment is valid for payment processing
  */
-export declare const validateEnvironment: (win?: typeof window) => boolean;
+export declare const validateEnvironment: () => boolean;
 export declare const maskSensitiveData: (data: unknown) => Record<string, unknown>;

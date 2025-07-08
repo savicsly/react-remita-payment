@@ -94,7 +94,7 @@ interface RemitaInitOptions {
 
 /**
  * RemitaPayment component for processing inline payments with Remita
- * Enhanced with full SSR support for Next.js and other frameworks
+ * Works universally in both React and Next.js environments
  *
  * @param config - Remita configuration including public key and service type ID
  * @param paymentData - Payment information including amount, customer details, etc.
@@ -114,7 +114,6 @@ interface UseRemitaPaymentProps {
     onSuccess: PaymentSuccessCallback;
     onError: PaymentErrorCallback;
     onClose: PaymentCloseCallback;
-    win?: typeof window;
 }
 declare const useRemitaPayment: (props: UseRemitaPaymentProps) => UseRemitaPaymentReturn;
 
@@ -128,13 +127,12 @@ declare const validateRemitaConfig: (config: RemitaConfig) => string[];
 declare const generateTransactionRef: (prefix?: string) => string;
 /**
  * Validates that we are in an appropriate environment for payment processing.
- * In SSR environments, always returns true and defers validation to client.
- * In browser environments, performs additional checks for security.
+ * Designed to work seamlessly in both client-side React and SSR frameworks like Next.js.
+ * Always returns true during SSR to prevent rendering errors.
  *
- * @param win Optional window object to use instead of global window
- * @returns boolean indicating if the environment is valid
+ * @returns boolean indicating if the environment is valid for payment processing
  */
-declare const validateEnvironment: (win?: typeof window) => boolean;
+declare const validateEnvironment: () => boolean;
 declare const maskSensitiveData: (data: unknown) => Record<string, unknown>;
 
 export { CustomField, Environment, ErrorResponse, PaymentCloseCallback, PaymentErrorCallback, PaymentRequest, PaymentResponse, PaymentSuccessCallback, RemitaConfig, RemitaInitOptions, RemitaPayment, RemitaPaymentProps, SplitPayment, UseRemitaPaymentReturn, generateTransactionRef, maskSensitiveData, sanitizeString, useRemitaPayment, validateAmount, validateEmail, validateEnvironment, validatePaymentRequest, validatePhoneNumber, validateRemitaConfig, validateTransactionId };
