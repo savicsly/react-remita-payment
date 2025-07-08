@@ -46,10 +46,12 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useRemitaPayment } from '../hooks/useRemitaPayment';
-import { generateTransactionRef } from '../utils/validation';
+import React, { useState } from "react";
+import { useRemitaPayment } from "../hooks/useRemitaPayment";
+import { generateTransactionRef } from "../utils/validation";
 /**
  * RemitaPayment component for processing inline payments with Remita
+ * Enhanced with full SSR support for Next.js and other frameworks
  *
  * @param config - Remita configuration including public key and service type ID
  * @param paymentData - Payment information including amount, customer details, etc.
@@ -62,20 +64,48 @@ import { generateTransactionRef } from '../utils/validation';
  * @param children - Child elements to render (typically a button)
  */
 var RemitaPayment = function (_a) {
-    var config = _a.config, paymentData = _a.paymentData, _b = _a.environment, environment = _b === void 0 ? 'demo' : _b, onSuccess = _a.onSuccess, onError = _a.onError, onClose = _a.onClose, _c = _a.disabled, disabled = _c === void 0 ? false : _c, _d = _a.className, className = _d === void 0 ? '' : _d, children = _a.children;
-    var _e = useRemitaPayment({
+    var config = _a.config, paymentData = _a.paymentData, _b = _a.environment, environment = _b === void 0 ? "demo" : _b, onSuccess = _a.onSuccess, onError = _a.onError, onClose = _a.onClose, _c = _a.disabled, disabled = _c === void 0 ? false : _c, _d = _a.className, className = _d === void 0 ? "" : _d, children = _a.children;
+    // Enhanced SSR detection using multiple strategies
+    var _e = useState(false), isBrowser = _e[0], setIsBrowser = _e[1];
+    var _f = useState(false), isFullyMounted = _f[0], setIsFullyMounted = _f[1];
+    var hasHydrated = React.useRef(false);
+    // Two-stage mounting process to handle SSR:
+    // 1. First detect if we're in a browser
+    // 2. Then confirm we've fully mounted after hydration
+    // Set browser state immediately (affects first render)
+    React.useEffect(function () {
+        if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+            setIsBrowser(true);
+            // Using requestAnimationFrame ensures we're in a paint cycle
+            // This helps avoid hydration mismatches in strict frameworks
+            var raf_1 = requestAnimationFrame(function () {
+                // Add a small delay to ensure full hydration
+                setTimeout(function () {
+                    hasHydrated.current = true;
+                    setIsFullyMounted(true);
+                }, 10);
+            });
+            return function () { return cancelAnimationFrame(raf_1); };
+        }
+    }, []);
+    // Use the hook with SSR safeguards
+    var _g = useRemitaPayment({
         config: config,
         environment: environment,
         onSuccess: onSuccess,
         onError: onError,
         onClose: onClose,
-    }), initiatePayment = _e.initiatePayment, isLoading = _e.isLoading, error = _e.error, isScriptLoaded = _e.isScriptLoaded;
+        // Only provide window object in browser environment
+        win: isBrowser ? window : undefined,
+    }), initiatePayment = _g.initiatePayment, isLoading = _g.isLoading, error = _g.error, isScriptLoaded = _g.isScriptLoaded;
+    // Safe payment handler with additional SSR & hydration checks
     var handlePayment = function () { return __awaiter(void 0, void 0, void 0, function () {
         var paymentWithRef;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    if (disabled || isLoading || !isScriptLoaded) {
+                    // Guard against calls during SSR or before hydration completes
+                    if (disabled || isLoading || !isScriptLoaded || !isFullyMounted || !isBrowser || !hasHydrated.current) {
                         return [2 /*return*/];
                     }
                     paymentWithRef = __assign(__assign({}, paymentData), { transactionId: paymentData.transactionId || generateTransactionRef() });
@@ -86,12 +116,17 @@ var RemitaPayment = function (_a) {
             }
         });
     }); };
+    // Show different button text based on component state
     var buttonText = isLoading
-        ? 'Processing...'
-        : !isScriptLoaded
-            ? 'Loading...'
-            : children || 'Pay Now';
-    var isButtonDisabled = disabled || isLoading || !isScriptLoaded || !!error;
-    return (_jsxs("div", { className: "remita-payment-container ".concat(className), children: [_jsx("button", { type: "button", onClick: handlePayment, disabled: isButtonDisabled, className: "remita-payment-button", "aria-label": "Initiate Remita payment", children: buttonText }), error && (_jsx("div", { className: "remita-payment-error", role: "alert", children: _jsxs("span", { children: ["Payment Error: ", error] }) }))] }));
+        ? "Processing..."
+        : !isFullyMounted || !isScriptLoaded
+            ? "Loading..."
+            : children || "Pay Now";
+    // Button remains disabled during SSR and until fully mounted
+    var isButtonDisabled = disabled || isLoading || !isScriptLoaded || !isFullyMounted || !isBrowser || !!error;
+    return (_jsxs("div", { className: "remita-payment-container ".concat(className), children: [_jsx("button", { type: "button", onClick: handlePayment, disabled: isButtonDisabled, className: "remita-payment-button", "aria-label": "Initiate Remita payment", style: {
+                    cursor: isButtonDisabled ? "not-allowed" : "pointer",
+                    opacity: isButtonDisabled ? 0.7 : 1,
+                }, children: buttonText }), error && isFullyMounted && (_jsx("div", { className: "remita-payment-error", role: "alert", children: _jsxs("span", { children: ["Payment Error: ", error] }) }))] }));
 };
 export default RemitaPayment;

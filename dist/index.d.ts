@@ -94,6 +94,7 @@ interface RemitaInitOptions {
 
 /**
  * RemitaPayment component for processing inline payments with Remita
+ * Enhanced with full SSR support for Next.js and other frameworks
  *
  * @param config - Remita configuration including public key and service type ID
  * @param paymentData - Payment information including amount, customer details, etc.
@@ -125,6 +126,14 @@ declare const sanitizeString: (input: string) => string;
 declare const validatePaymentRequest: (paymentData: PaymentRequest) => string[];
 declare const validateRemitaConfig: (config: RemitaConfig) => string[];
 declare const generateTransactionRef: (prefix?: string) => string;
+/**
+ * Validates that we are in an appropriate environment for payment processing.
+ * In SSR environments, always returns true and defers validation to client.
+ * In browser environments, performs additional checks for security.
+ *
+ * @param win Optional window object to use instead of global window
+ * @returns boolean indicating if the environment is valid
+ */
 declare const validateEnvironment: (win?: typeof window) => boolean;
 declare const maskSensitiveData: (data: unknown) => Record<string, unknown>;
 

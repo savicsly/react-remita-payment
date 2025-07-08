@@ -1,7 +1,8 @@
-import React from 'react';
-import { RemitaPaymentProps } from '../types';
+import React from "react";
+import { RemitaPaymentProps } from "../types";
 /**
  * RemitaPayment component for processing inline payments with Remita
+ * Enhanced with full SSR support for Next.js and other frameworks
  *
  * @param config - Remita configuration including public key and service type ID
  * @param paymentData - Payment information including amount, customer details, etc.
