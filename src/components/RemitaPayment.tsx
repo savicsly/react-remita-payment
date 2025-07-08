@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRemitaPayment } from "../hooks/useRemitaPayment";
 import { RemitaPaymentProps } from "../types";
 import { generateTransactionRef } from "../utils/validation";
 
 /**
  * RemitaPayment component for processing inline payments with Remita
+ * Enhanced with full SSR support for Next.js and other frameworks
  *
  * @param config - Remita configuration including public key and service type ID
  * @param paymentData - Payment information including amount, customer details, etc.
@@ -27,14 +28,35 @@ const RemitaPayment: React.FC<RemitaPaymentProps> = ({
   className = "",
   children,
 }) => {
-  // Track if component is mounted in client environment for SSR support
-  const [isMounted, setIsMounted] = useState(false);
-
-  // Set mounted state on client-side
-  useEffect(() => {
-    setIsMounted(true);
+  // Enhanced SSR detection using multiple strategies
+  const [isBrowser, setIsBrowser] = useState(false);
+  const [isFullyMounted, setIsFullyMounted] = useState(false);
+  const hasHydrated = React.useRef(false);
+  
+  // Two-stage mounting process to handle SSR:
+  // 1. First detect if we're in a browser
+  // 2. Then confirm we've fully mounted after hydration
+  
+  // Set browser state immediately (affects first render)
+  React.useEffect(() => {
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      setIsBrowser(true);
+      
+      // Using requestAnimationFrame ensures we're in a paint cycle
+      // This helps avoid hydration mismatches in strict frameworks
+      const raf = requestAnimationFrame(() => {
+        // Add a small delay to ensure full hydration
+        setTimeout(() => {
+          hasHydrated.current = true;
+          setIsFullyMounted(true);
+        }, 10);
+      });
+      
+      return () => cancelAnimationFrame(raf);
+    }
   }, []);
 
+  // Use the hook with SSR safeguards
   const { initiatePayment, isLoading, error, isScriptLoaded } =
     useRemitaPayment({
       config,
@@ -42,12 +64,14 @@ const RemitaPayment: React.FC<RemitaPaymentProps> = ({
       onSuccess,
       onError,
       onClose,
-      // Pass the window object explicitly only on client-side
-      win: typeof window !== "undefined" ? window : undefined,
+      // Only provide window object in browser environment
+      win: isBrowser ? window : undefined,
     });
 
+  // Safe payment handler with additional SSR & hydration checks
   const handlePayment = async () => {
-    if (disabled || isLoading || !isScriptLoaded || !isMounted) {
+    // Guard against calls during SSR or before hydration completes
+    if (disabled || isLoading || !isScriptLoaded || !isFullyMounted || !isBrowser || !hasHydrated.current) {
       return;
     }
 
@@ -60,14 +84,16 @@ const RemitaPayment: React.FC<RemitaPaymentProps> = ({
     await initiatePayment(paymentWithRef);
   };
 
+  // Show different button text based on component state
   const buttonText = isLoading
     ? "Processing..."
-    : !isMounted || !isScriptLoaded
+    : !isFullyMounted || !isScriptLoaded
     ? "Loading..."
     : children || "Pay Now";
 
+  // Button remains disabled during SSR and until fully mounted
   const isButtonDisabled =
-    disabled || isLoading || !isScriptLoaded || !isMounted || !!error;
+    disabled || isLoading || !isScriptLoaded || !isFullyMounted || !isBrowser || !!error;
 
   return (
     <div className={`remita-payment-container ${className}`}>
@@ -84,7 +110,7 @@ const RemitaPayment: React.FC<RemitaPaymentProps> = ({
       >
         {buttonText}
       </button>
-      {error && isMounted && (
+      {error && isFullyMounted && (
         <div className="remita-payment-error" role="alert">
           <span>Payment Error: {error}</span>
         </div>

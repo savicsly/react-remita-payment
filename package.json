@@ -1,8 +1,8 @@
 {
   "type": "module",
   "name": "react-remita-payment",
-  "version": "1.1.0",
-  "description": "A modern React component for processing Remita payments using their inline script with SSR support and security best practices",
+  "version": "1.2.0",
+  "description": "A modern React component for processing Remita payments with robust SSR support for Next.js and other frameworks, using their inline script with security best practices",
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
@@ -48,6 +48,7 @@
     "@types/jest": "^29.5.6",
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
+    "@types/node": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^6.9.1",
     "@typescript-eslint/parser": "^6.9.1",
     "eslint": "^8.52.0",

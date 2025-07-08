@@ -83,30 +83,44 @@ export const generateTransactionRef = (prefix: string = "RMT"): string => {
   const randomStr = Math.random().toString(36).substr(2, 9);
   return `${prefix}_${timestamp}_${randomStr}`.toUpperCase();
 };
-// Validates that required environment variables are set
+/**
+ * Validates that we are in an appropriate environment for payment processing.
+ * In SSR environments, always returns true and defers validation to client.
+ * In browser environments, performs additional checks for security.
+ * 
+ * @param win Optional window object to use instead of global window
+ * @returns boolean indicating if the environment is valid
+ */
 export const validateEnvironment = (win?: typeof window): boolean => {
-  // Most robust check for browser environment - always return true during SSR
+  // Most robust check for SSR environment
   if (typeof window === "undefined" || typeof document === "undefined") {
     // We're in SSR, always consider this valid and defer validation to client
     return true;
   }
   
-  // If window is undefined but global window exists, use the global window
+  // In browser but no win parameter provided - use global window
   if (typeof win === "undefined") {
     win = window;
   }
   
   // At this point, we're definitely in a browser
   
+  // Ensure we have a valid window with expected properties
+  if (!win || typeof win !== "object" || !win.location) {
+    console.warn("RemitaPayment: Unusual browser environment detected");
+    // Still allow payment to proceed as this might be a custom browser environment
+    return true;
+  }
+  
   // Warn if not using HTTPS in production
   if (
     process.env.NODE_ENV === "production" &&
     win.location.protocol !== "https:"
   ) {
-    console.warn("HTTPS is recommended for production payment processing");
+    console.warn("RemitaPayment: HTTPS is recommended for production payment processing");
   }
   
-  return true; // Consider all browser environments valid
+  return true; // Consider all browser environments valid for maximum compatibility
 };
 // Masks sensitive data for logging
 export const maskSensitiveData = (data: unknown): Record<string, unknown> => {

@@ -15,339 +15,64 @@ A modern, secure React component library for processing payments using Remita's 
 - 📱 **Responsive**: Works seamlessly across different screen sizes
 - 🔧 **Developer Friendly**: Easy to integrate with clear API and helpful error messages
 - 🌍 **Environment Support**: Separate demo and live environments
-- 🖥️ **Framework Agnostic**: Works with React, Next.js, Remix, and other frameworks with SSR support
+- 🖥️ **Framework Agnostic**: Works with React, Next.js, Remix, and other frameworks with robust SSR support
 
-## Installation
+## Server-Side Rendering Support
 
-```bash
-npm install react-remita-payment
-```
+This package has first-class support for SSR frameworks like Next.js, Remix, and others. It handles hydration safely and ensures payment components only activate in the browser.
 
-or
+### Next.js Usage
 
-```bash
-yarn add react-remita-payment
-```
-
-## Quick Start
+The package works directly in Next.js apps without any special wrapper components:
 
 ```tsx
-import React from "react";
-import {
-  RemitaPayment,
-  RemitaConfig,
-  PaymentRequest,
-} from "react-remita-payment";
+'use client'; // If using App Router
 
-const App: React.FC = () => {
+import { RemitaPayment, RemitaConfig, PaymentRequest } from 'react-remita-payment';
+
+export default function PaymentPage() {
   const config: RemitaConfig = {
-    publicKey: "your-remita-public-key",
-    serviceTypeId: "your-service-type-id",
-    currency: "NGN", // Optional, defaults to NGN
+    publicKey: process.env.NEXT_PUBLIC_REMITA_PUBLIC_KEY,
+    serviceTypeId: 'your-service-type-id',
   };
 
   const paymentData: PaymentRequest = {
-    amount: 10000, // Amount in kobo (100 kobo = 1 Naira)
-    email: "customer@example.com",
-    firstName: "John",
-    lastName: "Doe",
-    transactionId: "TXN123456789", // Optional, will be auto-generated if not provided
-    phoneNumber: "+2348012345678", // Optional
-    narration: "Payment for services", // Optional
+    amount: 5000,
+    email: 'customer@example.com',
+    firstName: 'John',
+    lastName: 'Doe',
+    transactionId: 'TXN-123456',
+    narration: 'Payment for services',
   };
 
   const handleSuccess = (response) => {
-    console.log("Payment successful:", response);
-    // Handle successful payment
-  };
-
-  const handleError = (error) => {
-    console.error("Payment failed:", error);
-    // Handle payment error
-  };
-
-  const handleClose = () => {
-    console.log("Payment dialog closed");
-    // Handle dialog close
+    console.log('Payment successful', response);
   };
 
   return (
     <div>
-      <h1>My App</h1>
+      <h1>Payment Page</h1>
       <RemitaPayment
         config={config}
         paymentData={paymentData}
-        environment="demo" // Use "live" for production
+        environment="live"
         onSuccess={handleSuccess}
-        onError={handleError}
-        onClose={handleClose}
+        onError={(error) => console.error(error)}
+        onClose={() => console.log('Payment closed')}
       >
-        Pay ₦100.00
+        Pay ₦5,000
       </RemitaPayment>
     </div>
   );
-};
-
-export default App;
-```
-
-## Advanced Usage
-
-### Using the Hook Directly
-
-For more control over the payment flow, you can use the `useRemitaPayment` hook directly:
-
-```tsx
-import React from "react";
-import { useRemitaPayment, generateTransactionRef } from "react-remita-payment";
-
-const CustomPaymentComponent: React.FC = () => {
-  const { initiatePayment, isLoading, error, isScriptLoaded } =
-    useRemitaPayment({
-      config: {
-        publicKey: "your-public-key",
-        serviceTypeId: "your-service-type-id",
-      },
-      environment: "demo",
-      onSuccess: (response) => console.log("Success:", response),
-      onError: (error) => console.error("Error:", error),
-      onClose: () => console.log("Closed"),
-    });
-
-  const handlePay = async () => {
-    await initiatePayment({
-      amount: 5000,
-      email: "user@example.com",
-      firstName: "Jane",
-      lastName: "Smith",
-      transactionId: generateTransactionRef("CUSTOM"),
-    });
-  };
-
-  return (
-    <div>
-      <button onClick={handlePay} disabled={!isScriptLoaded || isLoading}>
-        {isLoading ? "Processing..." : "Pay Now"}
-      </button>
-      {error && <div className="error">{error}</div>}
-    </div>
-  );
-};
-```
-
-### Custom Validation
-
-```tsx
-import {
-  validatePaymentRequest,
-  validateRemitaConfig,
-} from "react-remita-payment";
-
-const paymentData = {
-  amount: 1000,
-  email: "test@example.com",
-  firstName: "John",
-  lastName: "Doe",
-  transactionId: "TXN123",
-};
-
-// Validate payment data
-const errors = validatePaymentRequest(paymentData);
-if (errors.length > 0) {
-  console.error("Validation errors:", errors);
-}
-
-// Validate configuration
-const configErrors = validateRemitaConfig(config);
-if (configErrors.length > 0) {
-  console.error("Config errors:", configErrors);
 }
 ```
 
-## API Reference
+### How SSR Support Works
 
-### RemitaPayment Component Props
+The package implements multiple safeguards for SSR environments:
 
-| Prop          | Type                     | Required | Description                   |
-| ------------- | ------------------------ | -------- | ----------------------------- |
-| `config`      | `RemitaConfig`           | Yes      | Remita configuration object   |
-| `paymentData` | `PaymentRequest`         | Yes      | Payment information           |
-| `environment` | `'demo' \| 'live'`       | No       | Environment (default: 'demo') |
-| `onSuccess`   | `PaymentSuccessCallback` | Yes      | Success callback function     |
-| `onError`     | `PaymentErrorCallback`   | Yes      | Error callback function       |
-| `onClose`     | `PaymentCloseCallback`   | Yes      | Close callback function       |
-| `disabled`    | `boolean`                | No       | Disable the payment button    |
-| `className`   | `string`                 | No       | Additional CSS classes        |
-| `children`    | `React.ReactNode`        | No       | Custom button content         |
-
-### RemitaConfig
-
-```tsx
-interface RemitaConfig {
-  publicKey: string; // Your Remita public key
-  serviceTypeId: string; // Your service type ID
-  currency?: string; // Currency code (NGN, USD, GBP, EUR)
-  customFields?: CustomField[]; // Additional custom fields
-  split?: SplitPayment[]; // Split payment configuration
-}
-```
-
-### PaymentRequest
-
-```tsx
-interface PaymentRequest {
-  amount: number; // Amount in smallest currency unit (kobo for NGN)
-  email: string; // Customer email
-  firstName: string; // Customer first name
-  lastName: string; // Customer last name
-  transactionId: string; // Unique transaction identifier
-  phoneNumber?: string; // Customer phone number (optional)
-  narration?: string; // Payment description (optional)
-  customFields?: CustomField[]; // Additional fields (optional)
-}
-```
-
-### Response Types
-
-```tsx
-interface PaymentResponse {
-  status: "success" | "failed" | "pending";
-  transactionId: string;
-  paymentReference?: string;
-  message: string;
-  amount?: number;
-  currency?: string;
-  channel?: string;
-  gatewayResponseCode?: string;
-  gatewayResponseMessage?: string;
-}
-
-interface ErrorResponse {
-  status: "error";
-  message: string;
-  code?: string;
-  details?: Record<string, any>;
-}
-```
-
-## Security Considerations
-
-This library implements several security best practices:
-
-### 1. Input Validation
-
-- All user inputs are validated before processing
-- Email format validation using comprehensive regex
-- Phone number validation for Nigerian formats
-- Amount validation with reasonable limits
-- Transaction ID format validation
-
-### 2. Data Sanitization
-
-- String inputs are sanitized to prevent XSS attacks
-- Special characters are escaped or removed
-- Sensitive data is masked in logs
-
-### 3. Script Loading Security
-
-- Remita scripts are loaded with security attributes
-- Cross-origin and referrer policies are enforced
-- Script integrity checks are performed
-
-### 4. Environment Validation
-
-- HTTPS enforcement in production
-- Environment-specific script URLs
-- Proper error handling and logging
-
-### 5. Secure Data Handling
-
-- Sensitive information is never logged in plain text
-- Payment data is validated before transmission
-- No sensitive data is stored in component state
-
-## Testing
-
-The library includes comprehensive tests with high coverage:
-
-```bash
-# Run tests
-npm test
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run tests in watch mode
-npm run test:watch
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Support
-
-If you encounter any issues or have questions:
-
-1. Check the [documentation](https://github.com/yourusername/react-remita-payment#readme)
-2. Search [existing issues](https://github.com/yourusername/react-remita-payment/issues)
-3. Create a [new issue](https://github.com/yourusername/react-remita-payment/issues/new)
-
-## Changelog
-
-See [CHANGELOG.md](CHANGELOG.md) for details about changes in each version.
-
-## Remita Documentation
-
-For more information about Remita's payment API, visit:
-
-- [Remita Developer Center](https://www.remita.net/developers/)
-- [Inline Payment Documentation](https://www.remita.net/developers/#/payment/inline)
-
----
-
-**Note**: This is an unofficial React wrapper for Remita's payment system. Make sure to test thoroughly in the demo environment before going live.
-
-## Server-Side Rendering (SSR) Support
-
-This library is fully compatible with frameworks that use server-side rendering, such as Next.js, Remix, and Gatsby.
-
-### Using with Next.js
-
-```tsx
-"use client"; // Mark as client component in Next.js App Router
-
-import { RemitaPayment } from "react-remita-payment";
-
-export default function PaymentPage() {
-  // Component will gracefully handle SSR and hydration
-  return (
-    <RemitaPayment
-      config={config}
-      paymentData={paymentData}
-      environment="live"
-      onSuccess={handleSuccess}
-      onError={handleError}
-      onClose={handleClose}
-    >
-      Pay Now
-    </RemitaPayment>
-  );
-}
-```
-
-The component automatically:
-
-1. Detects server-side rendering environments
-2. Displays a loading state during SSR
-3. Initializes payment functionality after hydration
-4. Handles window/document references safely
-5. Manages script loading appropriately
+1. **Deferred Script Loading**: Scripts only load in the browser environment
+2. **Safe Hydration**: Component safely handles hydration to prevent React errors
+3. **Progressive Enhancement**: Component starts with a loading state until fully hydrated
+4. **Multiple Environment Checks**: Uses various techniques to verify browser environment
+5. **Graceful Degradation**: Falls back to safe states when browser features are unavailable
