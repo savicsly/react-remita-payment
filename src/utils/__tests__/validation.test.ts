@@ -41,15 +41,15 @@ describe("Validation Utils", () => {
     });
   });
   describe("validateAmount", () => {
-    it("should validate positive amounts within limits", () => {
+    it("should validate positive amounts", () => {
       expect(validateAmount(100)).toBe(true);
       expect(validateAmount(1000.5)).toBe(true);
       expect(validateAmount(9999999)).toBe(true);
+      expect(validateAmount(10000001)).toBe(true); // No upper limit anymore
     });
     it("should reject invalid amounts", () => {
       expect(validateAmount(0)).toBe(false);
       expect(validateAmount(-100)).toBe(false);
-      expect(validateAmount(10000001)).toBe(false);
       expect(validateAmount(Infinity)).toBe(false);
       expect(validateAmount(NaN)).toBe(false);
     });
@@ -102,7 +102,7 @@ describe("Validation Utils", () => {
       const errors = validatePaymentRequest(invalidPaymentRequest);
       expect(errors.length).toBeGreaterThan(0);
       expect(errors).toContain(
-        "Invalid amount. Amount must be a positive number and not exceed 10,000,000"
+        "Invalid amount. Amount must be a positive number"
       );
       expect(errors).toContain("Invalid email address format");
       expect(errors).toContain("First name must be at least 2 characters long");
@@ -158,24 +158,8 @@ describe("Validation Utils", () => {
     });
   });
   describe("validateEnvironment", () => {
-    it("should return false if window is undefined", () => {
-      expect(validateEnvironment(undefined)).toBe(false);
-    });
-    it("should warn if not using HTTPS in production", () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fakeWindow = { location: { protocol: "http:" } } as any;
-      process.env.NODE_ENV = "production";
-      const warnSpy = jest.spyOn(console, "warn").mockImplementation();
-      expect(validateEnvironment(fakeWindow)).toBe(true);
-      expect(warnSpy).toHaveBeenCalledWith(
-        "HTTPS is recommended for production payment processing"
-      );
-      warnSpy.mockRestore();
-    });
-    it("should return true if window is defined", () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fakeWindow = { location: { protocol: "https:" } } as any;
-      expect(validateEnvironment(fakeWindow)).toBe(true);
+    it("should always return true for SSR compatibility", () => {
+      expect(validateEnvironment()).toBe(true);
     });
   });
   describe("maskSensitiveData", () => {

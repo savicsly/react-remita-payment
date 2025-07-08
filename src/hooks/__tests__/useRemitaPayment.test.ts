@@ -57,15 +57,14 @@ describe("useRemitaPayment", () => {
     delete window.RmPaymentEngine;
   });
 
-  it("sets error if environment is invalid", async () => {
+  it("handles environment gracefully for SSR compatibility", async () => {
     const { result } = renderHook(() =>
-      useRemitaPayment({ config, onSuccess, onError, onClose, win: undefined })
+      useRemitaPayment({ config, onSuccess, onError, onClose })
     );
     await act(async () => {
       await waitFor(() => {
-        expect(result.current.error).toBe(
-          "Invalid environment for payment processing"
-        );
+        // Should not have environment errors for SSR compatibility
+        expect(result.current.error).toBeNull();
       });
     });
     expect(typeof result.current.initiatePayment).toBe("function");
@@ -87,7 +86,7 @@ describe("useRemitaPayment", () => {
 
   it("sets error if payment data is invalid", async () => {
     const { result } = renderHook(() =>
-      useRemitaPayment({ config, onSuccess, onError, onClose, win: window })
+      useRemitaPayment({ config, onSuccess, onError, onClose })
     );
     await act(async () => {
       await result.current.initiatePayment({ ...validPayment, amount: 0 });
@@ -121,7 +120,7 @@ describe("useRemitaPayment", () => {
       return origCreateElement.call(window.document, tag);
     };
     const { result } = renderHook(() =>
-      useRemitaPayment({ config, onSuccess, onError, onClose, win: window })
+      useRemitaPayment({ config, onSuccess, onError, onClose })
     );
     await act(async () => {
       await result.current?.initiatePayment(validPayment);
@@ -131,7 +130,7 @@ describe("useRemitaPayment", () => {
     await waitFor(
       () => {
         expect(result.current?.error).toMatch(
-          /Remita payment engine not available|Failed to load Remita payment script/
+          /Failed to load Remita script/
         );
       },
       { timeout: 5000 }
@@ -188,7 +187,7 @@ describe("useRemitaPayment", () => {
       });
     });
     const { result } = renderHook(() =>
-      useRemitaPayment({ config, onSuccess, onError, onClose, win: window })
+      useRemitaPayment({ config, onSuccess, onError, onClose })
     );
     expect(result.current && typeof result.current.initiatePayment).toBe(
       "function"
@@ -213,7 +212,7 @@ describe("useRemitaPayment", () => {
       hidePaymentWidget: jest.fn(),
     };
     const { result } = renderHook(() =>
-      useRemitaPayment({ config, onSuccess, onError, onClose, win: window })
+      useRemitaPayment({ config, onSuccess, onError, onClose })
     );
     expect(result.current && typeof result.current.initiatePayment).toBe(
       "function"
@@ -276,7 +275,7 @@ describe("useRemitaPayment", () => {
       });
     });
     const { result } = renderHook(() =>
-      useRemitaPayment({ config, onSuccess, onError, onClose, win: window })
+      useRemitaPayment({ config, onSuccess, onError, onClose })
     );
     expect(result.current && typeof result.current.initiatePayment).toBe(
       "function"

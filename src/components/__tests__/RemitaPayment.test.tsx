@@ -83,11 +83,11 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-    expect(screen.getByText("Processing...")).toBeInTheDocument();
+    expect(screen.getByText("Processing Payment...")).toBeInTheDocument();
     expect(screen.getByRole("button")).toBeDisabled();
   });
 
-  it("shows loading script state when script is not loaded", () => {
+  it("shows pay now button when script is not loaded but allows interaction", () => {
     (useRemitaPaymentModule.useRemitaPayment as jest.Mock).mockReturnValue({
       initiatePayment: jest.fn(),
       isLoading: false,
@@ -101,8 +101,8 @@ describe("RemitaPayment Component", () => {
         {...mockCallbacks}
       />
     );
-    expect(screen.getByText("Loading...")).toBeInTheDocument();
-    expect(screen.getByRole("button")).toBeDisabled();
+    expect(screen.getByText("Pay Now")).toBeInTheDocument();
+    expect(screen.getByRole("button")).not.toBeDisabled();
   });
 
   it("displays error message when error exists", () => {
